@@ -1,0 +1,97 @@
+import random
+import curses
+
+# Create the screen
+screen = curses.initscr()
+
+# Hide the cursor
+curses.curs_set(0)
+
+# Get the height and width of the screen
+height, width = screen.getmaxyx()
+
+# Create a new window
+window = curses.newwin(height, width, 0, 0)
+
+# Enable keypad input
+window.keypad(True)
+
+# Set the game speed
+window.timeout(170)
+
+# your score
+score =0
+
+# Set the initial position and direction of the snake
+snake_x = width // 3
+snake_y = height // 2
+snake = [
+    [snake_y, snake_x],
+    [snake_y, snake_x - 1],
+    [snake_y, snake_x - 2]
+]
+
+# Set the initial position of the food
+food = [height // 2, width // 2]
+
+# Display the food on the screen
+window.addch(food[0], food[1], ord('*'))
+
+# Set the initial movement direction
+key = curses.KEY_RIGHT
+
+# Game loop
+while True:
+    next_key = window.getch()
+    key = key if next_key == -1 else next_key
+
+    # Check if the snake hits the wall or itself
+    if (
+        snake[0][0] in [0, height] or
+        snake[0][1] in [0, width] or
+        snake[0] in snake[1:]
+    ):
+        game_over_msg = "Game Over!"
+        window.addstr(height // 2, (width - len(game_over_msg)) // 2, game_over_msg)
+        window.refresh()
+        curses.napms(200)  # Pause for 2 seconds
+
+        game_over_msg = "Game Over!"
+        s = "Score : "+str(score)
+        window.addstr((height + 1 ) // 2, (width - len(s)) // 2, s)
+        window.refresh()
+        curses.napms(2000)  # Pause for 2 seconds
+        break
+
+    # Calculate the new head position
+    new_head = [snake[0][0], snake[0][1]]
+    if key == curses.KEY_RIGHT:
+        new_head[1] += 1
+    if key == curses.KEY_LEFT:
+        new_head[1] -= 1
+    if key == curses.KEY_DOWN:
+        new_head[0] += 1
+    if key == curses.KEY_UP:
+        new_head[0] -= 1
+
+    # Insert the new head at the beginning of the snake
+    snake.insert(0, new_head)
+
+    # Check if the snake eats the food
+    if snake[0] == food:
+        food = None
+        score += 1
+        while food is None:
+            new_food = [
+                random.randint(1, height - 1),
+                random.randint(1, width - 1)
+            ]
+            food = new_food if new_food not in snake else None
+        window.addch(food[0], food[1], ord('*'))
+    else:
+        # Remove the tail of the snake
+        tail = snake.pop()
+        window.addch(tail[0], tail[1], ' ')
+
+    # Display the snake on the screen
+    window.addch(snake[0][0], snake[0][1], ord('#'))
